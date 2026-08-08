@@ -105,12 +105,6 @@ expire, or may never have populated at all if they've never been in range).
   `renotify_interval_minutes`. With `renotify = yes`,
   `renotify_interval_minutes: 0` means no wait - eligible to renotify the
   moment the destination is seen again.
-- `min_minutes_between_notifications` is a separate, global safeguard: even
-  if several different *new* destinations show up in a short window (e.g.
-  right after first deploying), notifications are spaced out by at least
-  this many minutes rather than firing all at once. A notification skipped
-  for this reason isn't lost - it's simply not marked as sent, so it's
-  reconsidered the next time that destination announces again.
 - Notifications are sent via `desired_method=PROPAGATED`, so they're
   delivered via store-and-forward through a propagation node rather than
   requiring the recipient to be online at that exact moment. Leave

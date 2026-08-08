@@ -63,15 +63,6 @@ RENOTIFY_ENABLED = CONFIG["watch"].as_bool("renotify")
 # to renotify the moment it's seen again.
 RENOTIFY_INTERVAL_SECONDS = CONFIG["watch"].as_int("renotify_interval_minutes") * 60
 
-# Global floor on how often ANY notification can be sent, regardless of how
-# many distinct new destinations show up. Per-destination renotify only
-# throttles repeats of the SAME destination - this protects against a burst
-# of many different new destinations firing a wave of messages at once
-# (e.g. right after first deploying, or several devices announcing in the
-# same short window). 0 disables this safeguard entirely.
-MIN_MINUTES_BETWEEN_NOTIFICATIONS = CONFIG["watch"].as_int("min_minutes_between_notifications")
-MIN_SECONDS_BETWEEN_NOTIFICATIONS = MIN_MINUTES_BETWEEN_NOTIFICATIONS * 60
-
 EXCLUDED_IDENTITIES = set(as_list(CONFIG["watch"].get("excluded_identities")))
 
 OUTBOUND_PROPAGATION_NODE = CONFIG["lxmf"].get("outbound_propagation_node") or None
@@ -253,16 +244,7 @@ class WatchHandler:
         )
 
         if is_new or due_for_renotify:
-            global_last_notify = self.seen.get("__global_last_notify__", 0)
-            if MIN_SECONDS_BETWEEN_NOTIFICATIONS > 0 and (now - global_last_notify) < MIN_SECONDS_BETWEEN_NOTIFICATIONS:
-                wait_left = MIN_SECONDS_BETWEEN_NOTIFICATIONS - (now - global_last_notify)
-                log_line(f"NOTIFY SUPPRESSED (rate limit) for dest={dest_hex} - "
-                         f"{wait_left:.0f}s left before another notification is allowed. "
-                         f"Not marked as notified, will be reconsidered on its next announce.")
-                return
-
             self.seen[dest_hex] = now
-            self.seen["__global_last_notify__"] = now
             save_seen(self.seen)
             subject = "New direct contact" if is_new else "Direct contact seen again"
             body = (f"{'A new' if is_new else 'A previously seen'} destination was heard directly "

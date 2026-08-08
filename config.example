@@ -38,17 +38,6 @@
   # to renotify the moment it's seen again. 1440 = 1 day.
   renotify_interval_minutes = 1440
 
-  # Global floor, in minutes, on how often ANY notification can be sent,
-  # regardless of how many distinct new destinations show up. This is
-  # separate from renotify_interval_minutes above, which only throttles
-  # repeats of the SAME destination - this instead protects against a
-  # burst of many different new destinations firing a wave of messages
-  # all at once (e.g. right after first deploying). A notification
-  # skipped for this reason isn't lost - it's simply reconsidered the
-  # next time that destination announces again. 0 disables this
-  # safeguard entirely.
-  min_minutes_between_notifications = 5
-
   # Identity hashes (lowercase hex, no separators) to ignore entirely -
   # comma-separated if more than one. Leave blank to include everyone,
   # including your own devices.
