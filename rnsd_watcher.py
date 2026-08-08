@@ -40,7 +40,20 @@ WATCH_LOG_PATH   = os.path.expanduser(CONFIG["watch_log_path"])
 SEEN_PATH        = os.path.expanduser(CONFIG["seen_path"])
 WATCHER_STORAGE  = os.path.expanduser(CONFIG["watcher_storage"])
 TARGET_IFACE_SUBSTRING = CONFIG["target_interface_substring"]
-RENOTIFY_INTERVAL_SECONDS = CONFIG["renotify_interval_seconds"]
+
+# 0 means "never renotify" - notify only once per destination, ever.
+_renotify_minutes = CONFIG["renotify_interval_minutes"]
+RENOTIFY_INTERVAL_SECONDS = (_renotify_minutes * 60) if _renotify_minutes else None
+
+# Global floor on how often ANY notification can be sent, regardless of how
+# many distinct new destinations show up. Per-destination renotify only
+# throttles repeats of the SAME destination - this protects against a burst
+# of many different new destinations firing a wave of messages at once
+# (e.g. right after first deploying, or several devices announcing in the
+# same short window). 0 disables this safeguard entirely.
+MIN_MINUTES_BETWEEN_NOTIFICATIONS = CONFIG.get("min_minutes_between_notifications", 5)
+MIN_SECONDS_BETWEEN_NOTIFICATIONS = MIN_MINUTES_BETWEEN_NOTIFICATIONS * 60
+
 EXCLUDED_IDENTITIES = set(CONFIG.get("excluded_identities", []))
 OUTBOUND_PROPAGATION_NODE = CONFIG.get("outbound_propagation_node")
 WATCHER_DISPLAY_NAME = CONFIG.get("watcher_display_name", "RNode Watcher")
@@ -217,7 +230,16 @@ class WatchHandler:
         )
 
         if is_new or due_for_renotify:
+            global_last_notify = self.seen.get("__global_last_notify__", 0)
+            if MIN_SECONDS_BETWEEN_NOTIFICATIONS > 0 and (now - global_last_notify) < MIN_SECONDS_BETWEEN_NOTIFICATIONS:
+                wait_left = MIN_SECONDS_BETWEEN_NOTIFICATIONS - (now - global_last_notify)
+                log_line(f"NOTIFY SUPPRESSED (rate limit) for dest={dest_hex} - "
+                         f"{wait_left:.0f}s left before another notification is allowed. "
+                         f"Not marked as notified, will be reconsidered on its next announce.")
+                return
+
             self.seen[dest_hex] = now
+            self.seen["__global_last_notify__"] = now
             save_seen(self.seen)
             subject = "New direct contact" if is_new else "Direct contact seen again"
             body = (f"{'A new' if is_new else 'A previously seen'} destination was heard directly "
@@ -239,8 +261,9 @@ def main():
     seen = load_seen()
     notifier = Notifier()
     RNS.Transport.register_announce_handler(WatchHandler(notifier, seen))
+    seen_count = len([k for k in seen if not k.startswith("__")])
     log_line(f"Watcher active - logging direct (1-hop) contacts on interfaces matching "
-             f"{TARGET_IFACE_SUBSTRING!r}, {len(seen)} already-seen destinations loaded, "
+             f"{TARGET_IFACE_SUBSTRING!r}, {seen_count} already-seen destinations loaded, "
              f"notifications armed")
 
     while True:
