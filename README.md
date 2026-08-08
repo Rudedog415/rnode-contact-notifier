@@ -95,6 +95,9 @@ expire, or may never have populated at all if they've never been in range).
 
 - Every matching announce is always logged, regardless of the notification
   throttle - the log is not throttled, only the LXMF message is.
+- `renotify_interval_seconds: 0` does **not** disable renotify - it means
+  renotify on every single matching announce (any elapsed time is `>= 0`).
+  Use `null` instead to notify only once per destination, ever.
 - Notifications are sent via `desired_method=PROPAGATED`, so they're
   delivered via store-and-forward through a propagation node rather than
   requiring the recipient to be online at that exact moment. Set

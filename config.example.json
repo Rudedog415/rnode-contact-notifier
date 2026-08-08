@@ -8,7 +8,7 @@
   "_target_interface_substring_comment": "Substring matched against RNS interface names (e.g. from your Reticulum config's [[Name]] section) to decide which interface to watch. Only announces received DIRECTLY (1 hop) on a matching interface are logged/notified.",
   "target_interface_substring": "Heltec v4",
 
-  "_renotify_interval_comment": "Seconds before the SAME destination can trigger another notification. Every matching announce is always logged regardless; this only throttles repeat notification messages. 86400 = 1 day.",
+  "_renotify_interval_comment": "Seconds before the SAME destination can trigger another notification. Every matching announce is always logged regardless; this only throttles repeat notification messages. 86400 = 1 day. Set to null (not 0 - that would notify on every single announce) to disable renotify entirely and only ever notify once per destination.",
   "renotify_interval_seconds": 86400,
 
   "_excluded_identities_comment": "Identity hashes (lowercase hex, no separators) to ignore entirely. Leave empty to include everyone, including your own devices.",

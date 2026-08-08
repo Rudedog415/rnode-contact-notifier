@@ -210,7 +210,11 @@ class WatchHandler:
         now = time.time()
         last_notified = self.seen.get(dest_hex)
         is_new = last_notified is None
-        due_for_renotify = (not is_new) and (now - last_notified >= RENOTIFY_INTERVAL_SECONDS)
+        due_for_renotify = (
+            not is_new
+            and RENOTIFY_INTERVAL_SECONDS is not None
+            and (now - last_notified >= RENOTIFY_INTERVAL_SECONDS)
+        )
 
         if is_new or due_for_renotify:
             self.seen[dest_hex] = now
