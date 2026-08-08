@@ -1,0 +1,76 @@
+# This is an example rnode-contact-notifier config file.
+# Copy this file to "config" (no extension, same convention as Reticulum's
+# own config files) in the same directory as rnsd_watcher.py, and fill in
+# your own values.
+
+
+[paths]
+
+  # Where every matching announce is logged. Always logged, never
+  # throttled by the notification settings below.
+  watch_log_path = ~/.reticulum/rnode_watch.log
+
+  # Where already-notified destinations (and when) are persisted, so a
+  # restart doesn't lose track of what's already been notified about.
+  seen_path = ~/.reticulum/rnode_watch_seen.json
+
+  # Storage directory for this watcher's own dedicated LXMF identity.
+  watcher_storage = ~/.reticulum/rnode_watcher_lxmf
+
+
+[watch]
+
+  # Substring matched against RNS interface names (as they appear in
+  # rnstatus, e.g. "RNodeInterface[Heltec v4]") to decide which interface
+  # to watch. Only announces received DIRECTLY (1 hop, no relay in
+  # between) on a matching interface are logged and notified about.
+  target_interface_substring = Heltec v4
+
+  # Minutes before the SAME destination can trigger another notification.
+  # Every matching announce is always logged regardless of this setting.
+  # 0 disables renotify entirely - each destination only ever notifies
+  # once, the first time it's seen. 1440 = 1 day.
+  renotify_interval_minutes = 1440
+
+  # Global floor, in minutes, on how often ANY notification can be sent,
+  # regardless of how many distinct new destinations show up. This is
+  # separate from renotify_interval_minutes above, which only throttles
+  # repeats of the SAME destination - this instead protects against a
+  # burst of many different new destinations firing a wave of messages
+  # all at once (e.g. right after first deploying). A notification
+  # skipped for this reason isn't lost - it's simply reconsidered the
+  # next time that destination announces again. 0 disables this
+  # safeguard entirely.
+  min_minutes_between_notifications = 5
+
+  # Identity hashes (lowercase hex, no separators) to ignore entirely -
+  # comma-separated if more than one. Leave blank to include everyone,
+  # including your own devices.
+  excluded_identities =
+
+
+[lxmf]
+
+  # Destination hash of an LXMF propagation node to route notifications
+  # through (e.g. your own lxmd instance, if running one locally). This
+  # lets notifications be delivered via store-and-forward rather than
+  # requiring the recipient to be online at that exact moment. Leave
+  # blank to attempt direct delivery only, with no propagation fallback.
+  outbound_propagation_node =
+
+  # Display name this watcher announces itself as, so recipients see a
+  # real name instead of "Anonymous Peer".
+  watcher_display_name = RNode Watcher
+
+
+[recipients]
+
+  # Who gets notified. Add one [[Name]] subsection per recipient.
+  # pubkey_hex is the recipient's raw 64-byte LXMF public key (128 hex
+  # characters) - e.g. the part after the colon in an lxma:// contact URI
+  # (lxma://<destination_hash>:<pubkey_hex>). This is NOT the destination
+  # hash itself - using the raw public key lets the watcher message
+  # someone without needing to have already seen them announce.
+
+  [[Example Person]]
+    pubkey_hex = REPLACE_WITH_64_BYTE_PUBLIC_KEY_HEX_128_CHARS

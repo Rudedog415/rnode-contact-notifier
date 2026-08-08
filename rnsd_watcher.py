@@ -13,36 +13,48 @@
 # actually received a packet - which is why this replaces rnsd entirely
 # rather than running alongside it.
 #
-# See README.md for setup instructions and config.example.json for the
-# configuration format.
+# See README.md for setup instructions and config.example for the
+# configuration format. Uses the same config file style (and the same
+# bundled configobj parser) as Reticulum's own config files.
 
 import RNS
 import RNS.Discovery
+from RNS.vendor.configobj import ConfigObj
 import LXMF
 import time
 import os
-import json
 import sys
+import json
 
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
 
 def load_config():
     if not os.path.isfile(CONFIG_PATH):
         print(f"Config file not found at {CONFIG_PATH}.", file=sys.stderr)
-        print("Copy config.example.json to config.json and fill in your own values.", file=sys.stderr)
+        print("Copy config.example to config and fill in your own values.", file=sys.stderr)
         sys.exit(1)
-    with open(CONFIG_PATH, "r") as f:
-        return json.load(f)
+    return ConfigObj(CONFIG_PATH)
+
+def as_list(value):
+    """configobj returns a plain string for a single value and a list only
+    when a key has multiple comma-separated values - normalise to a list."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    value = value.strip()
+    return [value] if value else []
 
 CONFIG = load_config()
 
-WATCH_LOG_PATH   = os.path.expanduser(CONFIG["watch_log_path"])
-SEEN_PATH        = os.path.expanduser(CONFIG["seen_path"])
-WATCHER_STORAGE  = os.path.expanduser(CONFIG["watcher_storage"])
-TARGET_IFACE_SUBSTRING = CONFIG["target_interface_substring"]
+WATCH_LOG_PATH   = os.path.expanduser(CONFIG["paths"]["watch_log_path"])
+SEEN_PATH        = os.path.expanduser(CONFIG["paths"]["seen_path"])
+WATCHER_STORAGE  = os.path.expanduser(CONFIG["paths"]["watcher_storage"])
+
+TARGET_IFACE_SUBSTRING = CONFIG["watch"]["target_interface_substring"]
 
 # 0 means "never renotify" - notify only once per destination, ever.
-_renotify_minutes = CONFIG["renotify_interval_minutes"]
+_renotify_minutes = CONFIG["watch"].as_int("renotify_interval_minutes")
 RENOTIFY_INTERVAL_SECONDS = (_renotify_minutes * 60) if _renotify_minutes else None
 
 # Global floor on how often ANY notification can be sent, regardless of how
@@ -51,13 +63,18 @@ RENOTIFY_INTERVAL_SECONDS = (_renotify_minutes * 60) if _renotify_minutes else N
 # of many different new destinations firing a wave of messages at once
 # (e.g. right after first deploying, or several devices announcing in the
 # same short window). 0 disables this safeguard entirely.
-MIN_MINUTES_BETWEEN_NOTIFICATIONS = CONFIG.get("min_minutes_between_notifications", 5)
+MIN_MINUTES_BETWEEN_NOTIFICATIONS = CONFIG["watch"].as_int("min_minutes_between_notifications")
 MIN_SECONDS_BETWEEN_NOTIFICATIONS = MIN_MINUTES_BETWEEN_NOTIFICATIONS * 60
 
-EXCLUDED_IDENTITIES = set(CONFIG.get("excluded_identities", []))
-OUTBOUND_PROPAGATION_NODE = CONFIG.get("outbound_propagation_node")
-WATCHER_DISPLAY_NAME = CONFIG.get("watcher_display_name", "RNode Watcher")
-NOTIFY_RECIPIENTS = CONFIG.get("notify_recipients", [])
+EXCLUDED_IDENTITIES = set(as_list(CONFIG["watch"].get("excluded_identities")))
+
+OUTBOUND_PROPAGATION_NODE = CONFIG["lxmf"].get("outbound_propagation_node") or None
+WATCHER_DISPLAY_NAME = CONFIG["lxmf"].get("watcher_display_name", "RNode Watcher")
+
+NOTIFY_RECIPIENTS = [
+    {"label": label, "pubkey_hex": section["pubkey_hex"]}
+    for label, section in CONFIG.get("recipients", {}).items()
+]
 
 _discovery_results = []
 _iface_parser = RNS.Discovery.InterfaceAnnounceHandler(callback=_discovery_results.append)

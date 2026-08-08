@@ -43,8 +43,13 @@ exclude-list.
 
 1. You need `RNS` and `LXMF` installed in the same Python environment (if
    installed via `pipx install rns`, inject LXMF into it: `pipx inject rns lxmf`).
-2. Copy `config.example.json` to `config.json` and fill in your values (see
-   inline comments in that file for what each field means).
+   Config parsing uses RNS's own bundled `configobj` (`RNS.vendor.configobj`),
+   the same format and parser Reticulum, NomadNet, and lxmd use for their
+   own config files - no extra dependency needed.
+2. Copy `config.example` to `config` (same directory as `rnsd_watcher.py`,
+   no file extension - same convention as Reticulum's own config files) and
+   fill in your values (see inline comments in that file for what each
+   setting means).
 3. Replace your `rnsd` systemd service (or however you launch `rnsd`) to run
    this script instead. Example unit file, assuming a pipx-installed `rns`:
 
@@ -81,10 +86,10 @@ exclude-list.
 
 ## Getting a recipient's public key
 
-`notify_recipients` needs each recipient's raw public key (128 hex chars),
-not their destination hash. Most LXMF clients can export a shareable
-`lxma://<destination_hash>:<public_key_hex>` contact URI — the part after
-the `:` is what you want for `pubkey_hex`.
+Each `[[Name]]` subsection under `[recipients]` needs that recipient's raw
+public key (128 hex chars), not their destination hash. Most LXMF clients
+can export a shareable `lxma://<destination_hash>:<public_key_hex>` contact
+URI — the part after the `:` is what you want for `pubkey_hex`.
 
 If you only have someone's destination hash and no contact URI, you can
 alternatively rely on `RNS.Identity.recall()` if this Pi has ever seen them
@@ -105,8 +110,8 @@ expire, or may never have populated at all if they've never been in range).
   reconsidered the next time that destination announces again.
 - Notifications are sent via `desired_method=PROPAGATED`, so they're
   delivered via store-and-forward through a propagation node rather than
-  requiring the recipient to be online at that exact moment. Set
-  `outbound_propagation_node` to `null` if you'd rather attempt direct
+  requiring the recipient to be online at that exact moment. Leave
+  `outbound_propagation_node` blank if you'd rather attempt direct
   delivery only.
 - The watcher creates its own dedicated LXMF identity on first run (stored
   under `watcher_storage`), separate from any other identity on the system.
