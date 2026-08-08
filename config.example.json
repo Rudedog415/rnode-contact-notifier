@@ -1,0 +1,29 @@
+{
+  "_comment": "Copy this file to config.json and fill in your own values.",
+
+  "watch_log_path": "~/.reticulum/rnode_watch.log",
+  "seen_path": "~/.reticulum/rnode_watch_seen.json",
+  "watcher_storage": "~/.reticulum/rnode_watcher_lxmf",
+
+  "_target_interface_substring_comment": "Substring matched against RNS interface names (e.g. from your Reticulum config's [[Name]] section) to decide which interface to watch. Only announces received DIRECTLY (1 hop) on a matching interface are logged/notified.",
+  "target_interface_substring": "Heltec v4",
+
+  "_renotify_interval_comment": "Seconds before the SAME destination can trigger another notification. Every matching announce is always logged regardless; this only throttles repeat notification messages. 86400 = 1 day.",
+  "renotify_interval_seconds": 86400,
+
+  "_excluded_identities_comment": "Identity hashes (lowercase hex, no separators) to ignore entirely. Leave empty to include everyone, including your own devices.",
+  "excluded_identities": [],
+
+  "_outbound_propagation_node_comment": "Destination hash of an LXMF propagation node to route notifications through (e.g. your own lxmd instance, if running one locally). Set to null to send direct-only with no propagation fallback.",
+  "outbound_propagation_node": null,
+
+  "watcher_display_name": "RNode Watcher",
+
+  "_notify_recipients_comment": "Who gets notified. pubkey_hex is the recipient's raw 64-byte LXMF public key (128 hex chars) - e.g. from an lxma:// contact URI (lxma://<dest_hash>:<pubkey_hex>), NOT the destination hash itself. This lets the watcher message someone without needing to have already seen them announce.",
+  "notify_recipients": [
+    {
+      "label": "Example Person",
+      "pubkey_hex": "REPLACE_WITH_64_BYTE_PUBLIC_KEY_HEX_128_CHARS"
+    }
+  ]
+}
