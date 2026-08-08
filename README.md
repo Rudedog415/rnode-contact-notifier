@@ -100,8 +100,11 @@ expire, or may never have populated at all if they've never been in range).
 
 - Every matching announce is always logged, regardless of any notification
   throttle below - only the LXMF message is throttled, never the log.
-- `renotify_interval_minutes: 0` disables renotify entirely - each
-  destination only ever notifies once, the first time it's seen.
+- `renotify = no` disables renotify entirely - each destination only ever
+  notifies once, the first time it's seen, regardless of
+  `renotify_interval_minutes`. With `renotify = yes`,
+  `renotify_interval_minutes: 0` means no wait - eligible to renotify the
+  moment the destination is seen again.
 - `min_minutes_between_notifications` is a separate, global safeguard: even
   if several different *new* destinations show up in a short window (e.g.
   right after first deploying), notifications are spaced out by at least

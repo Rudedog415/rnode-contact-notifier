@@ -53,9 +53,15 @@ WATCHER_STORAGE  = os.path.expanduser(CONFIG["paths"]["watcher_storage"])
 
 TARGET_IFACE_SUBSTRING = CONFIG["watch"]["target_interface_substring"]
 
-# 0 means "never renotify" - notify only once per destination, ever.
-_renotify_minutes = CONFIG["watch"].as_int("renotify_interval_minutes")
-RENOTIFY_INTERVAL_SECONDS = (_renotify_minutes * 60) if _renotify_minutes else None
+# Whether a destination can ever trigger more than one notification.
+# false = notify only once per destination, ever, no matter how often it
+# reappears. true = allow repeats, gated by renotify_interval_minutes below.
+RENOTIFY_ENABLED = CONFIG["watch"].as_bool("renotify")
+
+# Minimum minutes before the SAME destination can trigger another
+# notification, once RENOTIFY_ENABLED is true. 0 means no wait - eligible
+# to renotify the moment it's seen again.
+RENOTIFY_INTERVAL_SECONDS = CONFIG["watch"].as_int("renotify_interval_minutes") * 60
 
 # Global floor on how often ANY notification can be sent, regardless of how
 # many distinct new destinations show up. Per-destination renotify only
@@ -242,7 +248,7 @@ class WatchHandler:
         is_new = last_notified is None
         due_for_renotify = (
             not is_new
-            and RENOTIFY_INTERVAL_SECONDS is not None
+            and RENOTIFY_ENABLED
             and (now - last_notified >= RENOTIFY_INTERVAL_SECONDS)
         )
 

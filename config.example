@@ -26,10 +26,16 @@
   # between) on a matching interface are logged and notified about.
   target_interface_substring = Heltec v4
 
-  # Minutes before the SAME destination can trigger another notification.
-  # Every matching announce is always logged regardless of this setting.
-  # 0 disables renotify entirely - each destination only ever notifies
-  # once, the first time it's seen. 1440 = 1 day.
+  # Whether a destination can ever trigger more than one notification.
+  # no = notify only once per destination, ever, no matter how often it
+  # reappears. yes = allow repeats, gated by renotify_interval_minutes
+  # below. Every matching announce is always logged either way - this and
+  # renotify_interval_minutes only affect the LXMF notification message.
+  renotify = yes
+
+  # Minimum minutes before the SAME destination can trigger another
+  # notification, once renotify above is yes. 0 means no wait - eligible
+  # to renotify the moment it's seen again. 1440 = 1 day.
   renotify_interval_minutes = 1440
 
   # Global floor, in minutes, on how often ANY notification can be sent,
